@@ -1,0 +1,63 @@
+k-Nearest Neighbors (kNN):
+
+Used the knn() function from the class package.
+Trained the model on Train_data1 and tested on Test_data1.
+Evaluated the model's accuracy for different values of k (1, 3, 5, 7, 15, 19) using the sapply() function.
+Support Vector Machine 
+
+(SVM):
+
+Utilized the train() function from the caret package with method "svmRadial".
+Defined parameter grid (param_grid) for tuning C and sigma.
+Implemented 5-fold cross-validation (trainControl) and performed grid search (tuneGrid).
+Predictions were made on svm_test.
+
+Decision Tree:
+
+Employed the rpart() function from the rpart package.
+Trained the model on dt_train and tested on dt_test.
+Visualized the decision tree using rpart.plot().
+
+LightGBM:
+
+Used the lgb.train() function from the lightgbm package.
+Converted categorical variables (e.g., Gender) to numeric.
+Created a LightGBM dataset (train_datalgbm) and defined model parameters (params).
+Trained the model on lgbm_train data.
+
+XGBoost:
+
+Employed the xgb.DMatrix() function from the xgboost package to create the data matrix.
+Converted categorical variables to numeric.
+Defined model parameters (params) and trained the model using the xgboost() function.
+Predictions were made on xgboost_test.
+
+Random Forest (RF):
+
+Used the randomForest() function from the randomForest package.
+Defined a hyperparameter grid (hyper_grid) for tuning ntree and mtry.
+Implemented 5-fold cross-validation (trainControl) for model training.
+Predictions were made on rf_test.
+
+Bagging:
+
+Created a list of individual models (kNN, SVM, Decision Tree, LightGBM, XGBoost, RF).
+Utilized the train() function from the caret package with method "boot".
+Trained the bagging ensemble model using fit_bagging.
+
+Boosting:
+
+Similar to bagging, created a list of individual models.
+Used the train() function from the caret package with boosting parameters (numTrees and learningRate) for training the boosting ensemble model.
+
+LIME (Local Interpretable Model-agnostic Explanations):
+
+Created a LIME explainer using the lime() function from the lime package.
+Explained model predictions on a subset of rf_test data using explain() function.
+Visualized feature importance using plot_features().
+
+SHAP (SHapley Additive exPlanations):
+
+Created a SHAP explainer using the explainer() function from the explainer package.
+Explained model predictions on rf_test data using predict_parts() with type = "shap".
+Visualized SHAP values using plot().

@@ -1,0 +1,25 @@
+results:
+
+knn:
+train1::84.93333
+
+svm:
+train1::85.36667
+
+XGBoost:
+train1::85.93333
+
+Desision Tree:
+train1::78.56667
+
+randomforest:
+train1::97.53333
+
+LightGBM:
+train1::90.46667
+
+Bagging:
+train1::98.2
+
+Boosting:
+train1::98.36667 

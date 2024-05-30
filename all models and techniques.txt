@@ -1,0 +1,201 @@
+knn:
+
+k_values <- c(1, 3, 5, 7, 15, 19)
+
+# Calculate accuracy for each k value
+model1 <- knn(train = Train_data1, 
+              test = Test_data1, 
+              cl = cluster, 
+              k = 5)
+
+accuracy_values <- sapply(k_values, function(k) {
+  model1 <- knn(train = Train_data1, 
+                test = Test_data1, 
+                cl = cluster, 
+                k = k)
+  1 - mean(model1 != Test_data$Sepsis_Result)
+})
+
+svm:
+
+library(e1071)
+library(caret)
+svm_train <- Train_data[1:10]
+svm_test <- Test_data[1:9]
+
+str(svm_test)
+str(svm_train)
+
+param_grid <- expand.grid(C = c(0.1, 1),
+                          # kernel = c("linear", "radial", "polynomial"),
+                          # degree = c(2, 3),
+                          # gamma = c(0.1, 1, 10),
+                          sigma = c(0.1, 1))
+
+ctrl <- trainControl(method = "cv", number = 5, allowParallel = TRUE)
+
+model2 <- train(Sepsis_Result ~ ., data = svm_train, method = "svmRadial", trControl = ctrl,tuneLength = 8,
+                   tuneGrid = param_grid)
+predictions1 <- predict(model2, newdata = svm_test)
+
+Decision Tree:
+
+library(rpart)
+library(rpart.plot)
+library(ggplot2)
+
+
+dt_train<-Train_data[1:10]
+dt_test<-Test_data[1:9]
+
+
+model3 = rpart(formula = Sepsis_Result ~ .,
+                  data = dt_train,
+                  control = rpart.control(minsplit = 1))
+predictions2 <- predict(model3, newdata = dt_test, type = "class")
+rpart.plot(model3)
+
+LightGBM:
+
+library(lightgbm)
+
+lgbm_train<-Train_data[1:10]
+lgbm_test<-Test_data[1:9]
+lgbm_train$Gender <- as.numeric(as.character(lgbm_train$Gender))
+lgbm_test$Gender <- as.numeric(as.character(lgbm_test$Gender))
+lgbm_train$Sepsis_Result <- as.integer(as.character(lgbm_train$Sepsis_Result))
+
+train_datalgbm <- lgb.Dataset(data = as.matrix(lgbm_train[, -10]), label = lgbm_train$Sepsis_Result)
+
+params <- list(
+  objective = "binary",  # Binary classification
+  metric = "binary_error",  # Error rate as evaluation metric
+  num_leaves = 10,
+  learning_rate = 0.1,
+  num_iterations = 100
+)
+
+model4 <- lgb.train(params, train_datalgbm)
+
+predictions3 <- predict(model4, as.matrix(lgbm_test))
+
+XGBoost:
+
+library(xgboost)
+
+xgboost_train<-Train_data[1:10]
+xgboost_test<-Test_data[1:9]
+
+str(xgboost_train)
+
+xgboost_train$Gender <- as.numeric(as.character(xgboost_train$Gender))
+xgboost_test$Gender <- as.numeric(as.character(xgboost_test$Gender))
+xgboost_train$Sepsis_Result <- as.numeric(as.character(xgboost_train$Sepsis_Result))
+
+train_matrix <- xgb.DMatrix(data = as.matrix(xgboost_train[, c("Gender", "Age", "ICULOS", "HospAdmTime", "HR", "O2Sat", "SBP", "MAP", "DBP")]),
+                            label = xgboost_train$Sepsis_Result)
+
+params <- list(
+  objective = "binary:logistic",  # For binary classification tasks
+  max_depth = 3,
+  eta = 0.1
+)
+model5 <- xgboost(data = train_matrix, params = params, nrounds = 100)
+print(model5)
+xgboost_test <- xgb.DMatrix(data = as.matrix(xgboost_test))
+predictions4 <- predict(model5, newdata = xgboost_test)
+plot(predictions4)
+print(predictions4)
+
+rf:
+
+library(randomForest)
+rf_train<-Train_data[1:10]
+rf_test<-Test_data[1:9]
+str(rf_test)
+
+hyper_grid <- expand.grid(
+  ntree = c(100, 200, 300),  
+  mtry = c(2, 4, 6) 
+)
+
+ctrl <- trainControl(method = "cv", number = 5)
+
+model6 <- randomForest(Sepsis_Result ~ ., data = rf_train ,method = "rf", 
+                       trControl = ctrl, 
+                       tuneGrid = hyper_grid)
+
+predictions5 <- predict(model6, rf_test)
+
+Bagging:
+
+models <- list(model1,model2,model3,model4,model5,model6)
+ctrl <- trainControl(method = "boot")
+training<-Train_data[1:10]
+testing<-Test_data1  
+fit_bagging <- train(Sepsis_Result ~ ., data = training, 
+             models = models, 
+             trControl = ctrl)
+plot(fit_bagging, main = "Bagging Ensemble Method Final Accuracy")
+
+Boosting:
+
+n.trees <- 100
+lr <- 0.1
+fit_boosting <- train(Sepsis_Result ~ ., data = training, 
+             models = models, 
+             trControl = ctrl,
+             numTrees = n.trees,
+             learningRate = lr)
+plot(fit_boosting, main = "Boosting Ensemble Method Final Accuracy")
+
+
+LIME:
+
+lime_explainer <- lime(rf_train, model6)
+class(lime_explainer)
+summary(lime_explainer)
+
+explanation <- explain(rf_test[1:5,], lime_explainer, n_labels = 1, n_features = 10)
+plot_features(explanation)
+
+
+lime_explanation <- explain(
+  x = rf_test, 
+  explainer = lime_explainer, 
+  n_permutations = 5000,
+  dist_fun = "gower",
+  kernel_width = .75,
+  n_features = 10, 
+  feature_select = "highest_weights",
+  labels = "Yes"
+)
+
+feature_importance <- lime_explainer$model$importance
+
+SHAP:
+
+
+library(explainer)
+
+library(randomForest)  
+
+shap_explainer <- explain(model6,
+                        data = as.data.frame(rf_test),
+                        y = Test_data$Sepsis_Result,
+                        verbose = FALSE)
+
+shap_explainer <- explainer(model6, data = rf_test, y = "Sepsis_Result")
+
+missing_values <- any(is.na(rf_test))
+
+# Remove rows with missing values
+rf_test <- rf_test[complete.cases(rf_test), ]
+
+feature_labels <- names(rf_test)
+x11()
+
+explanation <- predict_parts(shap_explainer, type = "shap", new_observation = rf_test[1:5, ])
+print(explanation)
+plot(explanation)
+
